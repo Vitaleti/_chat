@@ -1,18 +1,33 @@
+from django.views import View
 from django.shortcuts import render, redirect
-from django.http import HttpResponse
-from .forms import UserRegistrationForm
+from django.contrib.auth import authenticate, login
 
-# Create your views here.
-def register(request):
-	if request.method == 'POST':
-		form = UserRegistrationForm(request.POST)
+from .forms import UserCreationForm
+
+
+class Register(View):
+
+	template_name = 'registration/register.html'
+
+	def get(self, request):
+		context = {
+			'form': UserCreationForm()
+		}
+		return render(request, self.template_name, context)
+
+
+	def post(self, request):
+		form = UserCreationForm(request.POST)
+
 		if form.is_valid():
 			form.save()
-			return redirect('home') # Редирект на домашнюю страницу после успешной регистрации
-	else:
-		form = UserRegistrationForm()
-	return render(request, 'registration/register.html', {'form': form})
+			username = form.cleaned_data.get('username')
+			password = form.cleaned_data.get('password1')
+			user = authenticate(username=username, password=password)
+			login(request, user)
+			return redirect('home')
 
-
-def index(request):
-	return HttpResponse("<h1>Hello Nahui</h1>")
+		context = {
+			'form': form
+		}
+		return render(request, self.template_name, context)
